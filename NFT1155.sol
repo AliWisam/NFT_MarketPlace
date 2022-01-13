@@ -16,11 +16,11 @@ contract SignatureNFT is Initializable, ERC1155Upgradeable, OwnableUpgradeable, 
     CountersUpgradeable.Counter private _tokenIds;
 
 
-    uint256 public constant Bronze = 0;
-    uint256 public constant Silver = 1;
-    uint256 public constant Gold = 2;
-    uint256 public constant Platinum = 3;
-    uint256 public constant Legendary = 4;
+    uint256 public constant Bronze = 1;
+    uint256 public constant Silver = 2;
+    uint256 public constant Gold = 3;
+    uint256 public constant Platinum = 4;
+    uint256 public constant Legendary = 5;
     address marketPlaceAddress;
     //how many tokens a user can mint, not admin
     uint minterCopyAmount;
@@ -48,16 +48,17 @@ contract SignatureNFT is Initializable, ERC1155Upgradeable, OwnableUpgradeable, 
     //admin can mint a token with multiple copies
     //other user can only mint one token, unique token
      function createToken(address _to, uint _copies) public returns (uint) {
-         uint256 newItemId = _tokenIds.current();
+         _tokenIds.increment();
          if (msg.sender == owner()) {
+         uint256 newItemId = _tokenIds.current();
              _mint(_to, newItemId, _copies, "");
-             _tokenIds.increment();
+            setApprovalForAll(marketPlaceAddress,true);
              return newItemId;
          }
          else{
              require(msg.sender != owner(),"error: admin cannot mint this");
+            uint256 newItemId = _tokenIds.current();
             _mint(_to, newItemId, minterCopyAmount, "");
-            _tokenIds.increment();
             setApprovalForAll(marketPlaceAddress,true);
             return newItemId;
          }
