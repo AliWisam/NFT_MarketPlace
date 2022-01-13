@@ -20,6 +20,7 @@ contract SignatureMarketPlace is
     CountersUpgradeable.Counter private _itemsSold;
     CountersUpgradeable.Counter private _itemsDeleted;
 
+    event itemAmountRemaining(uint, uint);
     event MarketItemCreated(
         uint256 indexed itemId,
         address indexed nftContract,
@@ -159,6 +160,8 @@ contract SignatureMarketPlace is
         uint256 amount,
         uint256 price
     ) public nonReentrant {
+         _itemIds.increment();
+        uint256 itemId = _itemIds.current();
         require(
             SignatureNFT(payable(address(nftContract))).exists(tokenId) !=
                 false,
@@ -177,20 +180,10 @@ contract SignatureMarketPlace is
             "createMarketItem: not enough tokens"
         );
         require(price > 0, "Price must be at least 1 wei");
-        // if(msg.sender == owner()){
-        // require(msg.value == 0,"Listing Fee is 0 for admin");     
-        // }
-        // else{
-        // require(
-        //     msg.value == listingPrice,
-        //     "Price must be equal to listing price"
-        // );
-        // }
 
         require(amount != 0, "token amount should not be equal to zero");
 
-        _itemIds.increment();
-        uint256 itemId = _itemIds.current();
+       
 
    
          SignatureNFT(payable(address(nftContract))).safeTransferFrom(
@@ -271,6 +264,8 @@ contract SignatureMarketPlace is
         //updating current amount of tokens after selling
           idToMarketItem[itemId].amount = SignatureNFT(payable(address(nftContract))).balanceOf(address(this),itemId);
 
+            emit itemAmountRemaining(idToMarketItem[itemId].amount, itemId);
+
         //   for (uint i=0; i<idToMarketItem[itemId].copyOwners.length; i++) {
 
         //         if(idToMarketItem[itemId].copyOwners[i] != to){
@@ -278,16 +273,12 @@ contract SignatureMarketPlace is
         //         idToMarketItem[itemId].copyOwners.push(payable(address(to)));
                
         //         }
-        //          emit productCopySoldTo(idToMarketItem[itemId].copyOwners[i]);
+                //  emit productCopySoldTo(idToMarketItem[itemId].copyOwners[i]);
         //   }
-        //to do payment for market commision
-        //   if( idToMarketItem[itemId].seller != owner()){
-        //     payable(owner()).transfer(listingPrice);
-        // }
 
         //
         _itemsSold.increment();
-        //
+        //stack too deep
         // emit ProductSold(
         //     idToMarketItem[itemId].itemId,
         //     idToMarketItem[itemId].nftContract,
@@ -299,26 +290,26 @@ contract SignatureMarketPlace is
             return;
         }
 
-        // if(itemId != Bronze || itemId != Silver || itemId != Gold || itemId != Platinum || itemId != Legendary ){
-        // idToMarketItem[itemId].owner = payable(to);
-        // idToMarketItem[itemId].sold = true;
-        // _itemsSold.increment();
+        if(itemId != Bronze || itemId != Silver || itemId != Gold || itemId != Platinum || itemId != Legendary ){
+        idToMarketItem[itemId].owner = payable(to);
+        idToMarketItem[itemId].sold = true;
+        _itemsSold.increment();
         
-        // //todo , payments for market commision
-        // // if( idToMarketItem[itemId].seller != owner()){
-        // //     payable(owner()).transfer(listingPrice);
-        // // }
-        // //   emit ProductSold(
-        // //     idToMarketItem[itemId].itemId,
-        // //     idToMarketItem[itemId].nftContract,
-        // //     idToMarketItem[itemId].tokenId,
-        // //     idToMarketItem[itemId].price
-        // // );
-
+        //todo , payments for market commision
+        // if( idToMarketItem[itemId].seller != owner()){
+        //     payable(owner()).transfer(listingPrice);
         // }
+        //   emit ProductSold(
+        //     idToMarketItem[itemId].itemId,
+        //     idToMarketItem[itemId].nftContract,
+        //     idToMarketItem[itemId].tokenId,
+        //     idToMarketItem[itemId].price
+        // );
+
+        }
 
     }
-
+    //to do, dont use this
     function putItemToResell(address nftContract, uint256 itemId,uint256 amount, uint256 newPrice)
         public
         payable
@@ -376,8 +367,8 @@ contract SignatureMarketPlace is
     {
         return SignatureNFT(payable(address(nftContract))).uri(tokenId);
     }
-    //fix
 
+    //error here after buying any token from 5 cards
     /* Returns all unsold market items */
       function fetchMarketItems() public view returns (MarketItem[] memory) {
         uint256 itemCount = _itemIds.current();
@@ -388,8 +379,7 @@ contract SignatureMarketPlace is
         for (uint256 i = 0; i < itemCount; i++) {
             if (
                 idToMarketItem[i + 1].owner == address(0) &&
-                idToMarketItem[i + 1].sold == false &&
-                idToMarketItem[i + 1].tokenId != 0
+                idToMarketItem[i + 1].sold == false
             ) {
                 uint256 currentId = i + 1;
                 MarketItem storage currentItem = idToMarketItem[currentId];
@@ -399,6 +389,7 @@ contract SignatureMarketPlace is
         }
         return items;
     }
+
     /* Returns only items that a user has purchased */
     function fetchMyNFTs() public view returns (MarketItem[] memory) {
         uint256 totalItemCount = _itemIds.current();
